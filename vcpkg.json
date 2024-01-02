@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "skyrim-gameplay-consistency-improvements-project",
+  "version-string": "0.0.1",
+  "dependencies": [
+    "commonlibsse-ng",
+    "boost-algorithm",
+    "boost-atomic",
+    "boost-property-tree"
+  ]
+}

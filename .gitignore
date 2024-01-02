@@ -1,0 +1,9 @@
+.idea
+.vs
+.vscode/settings.json
+build
+cmake-build*
+CMakeFiles
+Papyrus/PAPYRUS
+*.pex
+Papyrus/Scripts/BUILD_ALL.bat

@@ -1,0 +1,30 @@
+diff --git a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_13/source_original/UD_AnimationManagerScript.psc b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_13/source/UD_AnimationManagerScript.psc
+index abf85a3..fa0e01f 100644
+--- a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_13/source_original/UD_AnimationManagerScript.psc
++++ b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_13/source/UD_AnimationManagerScript.psc
+@@ -18,6 +18,7 @@
+ Scriptname UD_AnimationManagerScript extends Quest
+ 
+ import UD_Native
++import GCIP
+ 
+ UnforgivingDevicesMain                 Property     UDmain                  Auto
+ UDCustomDeviceMain                     Property     UDCDmain                        Hidden
+@@ -497,7 +498,7 @@ EndFunction
+ /;
+ Function LockAnimatingActor(Actor akActor, Bool abDisableActor = True)
+ 
+-    If IsAnimating(akActor)
++    If IsAnimating(akActor) || !GCIP.tryLock(akActor, "UD_Animation", "Unforgiving Devices Animation")
+         Return
+     EndIf
+     
+@@ -559,6 +560,8 @@ Function UnlockAnimatingActor(Actor akActor, Bool abEnableActor = True)
+     EndIf
+     
+     akActor.SetVehicle(None)
++
++    GCIP.unlock(akActor, "UD_Animation")
+     
+     ;If StorageUtil.HasFormValue(akActor, "UD_EquippedShield")
+     ;    If UD_Native.IsPlayer(akActor)
