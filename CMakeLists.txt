@@ -32,64 +32,6 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 sta
 target_precompile_headers(${PROJECT_NAME} PRIVATE PCH.h) # <--- PCH.h is required!
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
-# ----- Copy and merge across the po files that come with the source.
-
-message("Compile Papyrus scripts...")
-
-file(GLOB papyrusPathProject "Papyrus/*")
-
-foreach(pPath ${papyrusPathProject})
-  # Get the language name, like en_US or zh_CN from the name of the po file, so
-  # 'en_US.po' or 'zh_CN.po' become 'en_US' or 'zh_CN.po'
-#  get_filename_component(langName ${file} NAME_WE)
-
-#    message(STATUS "${pPath}")
-    file(GLOB pscFile "${pPath}/source/*.psc")
-    foreach(file ${pscFile})
-#        message(STATUS "${pscFile}")
-        get_filename_component(pScriptName ${pscFile} NAME_WLE)
-        get_filename_component(pScriptSourceDir ${pscFile} DIRECTORY)
-#        message(STATUS "${pScriptName}")
-        set(pCompilledScriptFile "${pPath}/${pScriptName}.pex")
-#        message(STATUS "${pCompilledScriptFile}")
-
-      if(NOT EXISTS ${pCompilledScriptFile} OR ${pscFile} IS_NEWER_THAN ${pCompilledScriptFile})
-        message(STATUS "Recomplie ${pscFile}")
-        execute_process(COMMAND "${CMAKE_SOURCE_DIR}/Papyrus/PAPYRUS/PapyrusCompiler.exe" 
-            "${pscFile}"
-            "-o=${pPath}" 
-            "-i=${pScriptSourceDir};${CMAKE_SOURCE_DIR}/Papyrus/scripts/source;SRC;SRC_UD;SRC_OTHER;SRC_LAL;SRC_LLOTHER;SRC_ZAZ;SRC_PO3;SRC_DD;SRC_SKYUI;SRC_UIEXT;SRC_PAPUTIL;SRC_SXL;SRC_MFG;SRC_RM;SRC_FNIS;SRC_SLA;SRC_IWW;SRC_XPMSE;SRC_ST"
-            "-optimize"
-            "-f=Flags.flg"
-            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Papyrus/PAPYRUS"
-            OUTPUT_QUIET ERROR_VARIABLE error RESULT_VARIABLE ret)
-
-        if(ret) # Have to do this hack as msgmerge prints to stderr.
-            message(WARNING "${ret} - ${error}")
-        endif()
-      endif()
-
-        set(pscOriginalFile "${pPath}/source_original/${pScriptName}.psc")
-        set(pscPatchFile "${pPath}/${pScriptName}.psc.patch.txt")
-        if(EXISTS ${pscOriginalFile} AND (NOT EXISTS ${pscPatchFile} OR ${pscFile} IS_NEWER_THAN ${pscPatchFile}))
-            execute_process( COMMAND ${CMAKE_COMMAND} -E compare_files ${pscOriginalFile} ${pscFile}
-                     RESULT_VARIABLE compare_result)
-            if( compare_result EQUAL 1)
-                message("Create patch file for ${pscFile}")
-                execute_process(COMMAND "git" "diff" "--patch" "--no-index"
-                    "--output=${pscPatchFile}"
-                    ${pscOriginalFile} ${pscFile}
-                    OUTPUT_QUIET ERROR_VARIABLE error RESULT_VARIABLE ret)
-
-                if(ret) # Have to do this hack as msgmerge prints to stderr.
-                    message(WARNING "${ret} - ${error}")
-                endif()
-            endif()
-        endif()
-
-    endforeach()
-endforeach()
-
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
 if(DEFINED OUTPUT_FOLDER)

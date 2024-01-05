@@ -25,7 +25,7 @@ namespace GCIP::Modules {
 
         bool tryLock(RE::TESForm* form, std::string lock_id, std::string action);
         bool shareLock(RE::TESForm* form, std::string lock_id, std::string allowed_lock_id);
-        bool isLocked(RE::TESForm* form, std::string lock_id);
+        bool isLockAllowed(RE::TESForm* form, std::string lock_id);
         bool unlock(RE::TESForm* form, std::string lock_id);
         std::string getCurrentAction(RE::TESForm* form);
 

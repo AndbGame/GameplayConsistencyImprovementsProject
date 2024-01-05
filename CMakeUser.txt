@@ -2,4 +2,5 @@ set(OUTPUT_FOLDER "E:/andb_skyrim_3/andb_1/mods/GCIP")
 
 set(OUTPUT_PAPYRUS_PATHES
 	"UD_3.0_NG_Experimental_13"
+	"FillHerUp_1.96"
 )

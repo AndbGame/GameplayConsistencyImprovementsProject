@@ -15,8 +15,8 @@ namespace {
         return GCIP::Modules::EncounterPlanner::GetSingleton()->shareLock(form, lock_id, allowed_lock_id);
     }
 
-    inline bool isLocked(PAPYRUSFUNCHANDLE, RE::TESForm* form, std::string lock_id) {
-        return GCIP::Modules::EncounterPlanner::GetSingleton()->isLocked(form, lock_id);
+    inline bool isLockAllowed(PAPYRUSFUNCHANDLE, RE::TESForm* form, std::string lock_id) {
+        return GCIP::Modules::EncounterPlanner::GetSingleton()->isLockAllowed(form, lock_id);
     }
 
     inline bool unlock(PAPYRUSFUNCHANDLE, RE::TESForm* form, std::string lock_id) {
@@ -44,7 +44,7 @@ namespace {
 
         REGISTERPAPYRUSFUNC(tryLock, false)
         REGISTERPAPYRUSFUNC(shareLock, false)
-        REGISTERPAPYRUSFUNC(isLocked, false)
+        REGISTERPAPYRUSFUNC(isLockAllowed, false)
         REGISTERPAPYRUSFUNC(unlock, false)
         REGISTERPAPYRUSFUNC(getCurrentAction, false)
 
@@ -70,7 +70,6 @@ void GCIP::Modules::EncounterPlanner::reset() {
 }
 
 void GCIP::Modules::EncounterPlanner::dumpToLog() {
-    LOG("GCIP::Modules::EncounterPlanner::dumpToLog");
     for (auto iter = this->forms.begin(); iter != this->forms.end(); ++iter) {
         LOG("\tForm: {:08X}", iter->first);
         if (iter->second->locks.empty()) {
@@ -88,7 +87,7 @@ void GCIP::Modules::EncounterPlanner::dumpToLog() {
 }
 
 bool GCIP::Modules::EncounterPlanner::tryLock(RE::TESForm* form, std::string lock_id, std::string action) {
-    LOG("GCIP::Modules::EncounterPlanner::tryLock");
+    LOG("GCIP::Modules::EncounterPlanner::tryLock {:08X}:{}", form->GetFormID(), lock_id);
     std::shared_ptr<LockedForm> lockedForm;
 
     // Check in lockedForms
@@ -118,6 +117,7 @@ bool GCIP::Modules::EncounterPlanner::tryLock(RE::TESForm* form, std::string loc
         }
         this->spinUnlock();
         this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::tryLock - Locked {:08X}:{}", form->GetFormID(), lock_id);
         return true;
     }
     // Shared Locks
@@ -128,27 +128,35 @@ bool GCIP::Modules::EncounterPlanner::tryLock(RE::TESForm* form, std::string loc
         lockedForm->locks.push(lock);
         this->spinUnlock();
         this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::tryLock - Locked by sharedLocks {:08X}:{}", form->GetFormID(), lock_id);
         return true;
     }
 
     this->spinUnlock();
     this->dumpToLog();
+    LOG("GCIP::Modules::EncounterPlanner::tryLock - Not Locked {:08X}:{}", form->GetFormID(), lock_id);
     return false;
 }
 
 bool GCIP::Modules::EncounterPlanner::shareLock(RE::TESForm* form, std::string lock_id, std::string allowed_lock_id) {
-    LOG("GCIP::Modules::EncounterPlanner::shareLock");
+    LOG("GCIP::Modules::EncounterPlanner::shareLock {:08X}:{} - {}", form->GetFormID(), lock_id, allowed_lock_id);
     // Check in lockedForms
     this->spinLock();
     auto lockedFormIt = this->forms.find(form->GetFormID());
     if (lockedFormIt == this->forms.end()) {
         this->spinUnlock();
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::shareLock - Not Locked {:08X}:{} - {}", form->GetFormID(), lock_id,
+            allowed_lock_id);
         return false;
     }
 
     // Check LockedForm is empty
     if (lockedFormIt->second->locks.empty()) {
         this->spinUnlock();
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::shareLock - Not have Locks {:08X}:{} - {}", form->GetFormID(), lock_id,
+            allowed_lock_id);
         return false;
     }
 
@@ -161,27 +169,36 @@ bool GCIP::Modules::EncounterPlanner::shareLock(RE::TESForm* form, std::string l
         }
         this->spinUnlock();
         this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::shareLock - Success {:08X}:{} - {}", form->GetFormID(), lock_id,
+            allowed_lock_id);
         return true;
     }
 
     this->spinUnlock();
+    this->dumpToLog();
+    LOG("GCIP::Modules::EncounterPlanner::shareLock - Wrong Lock {:08X}:{} - {}", form->GetFormID(), lock_id,
+        allowed_lock_id);
     return false;
 }
 
-bool GCIP::Modules::EncounterPlanner::isLocked(RE::TESForm* form, std::string lock_id) {
-    LOG("GCIP::Modules::EncounterPlanner::isLocked");
+bool GCIP::Modules::EncounterPlanner::isLockAllowed(RE::TESForm* form, std::string lock_id) {
+    LOG("GCIP::Modules::EncounterPlanner::isLockAllowed {:08X}:{}", form->GetFormID(), lock_id);
     // Check in lockedForms
     this->spinLock();
     auto lockedFormIt = this->forms.find(form->GetFormID());
     if (lockedFormIt == this->forms.end()) {
         this->spinUnlock();
-        return false;
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::isLockAllowed - Not Locked {:08X}:{}", form->GetFormID(), lock_id);
+        return true;
     }
 
     // Check LockedForm is empty
     if (lockedFormIt->second->locks.empty()) {
         this->spinUnlock();
-        return false;
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::isLockAllowed - Not have Locks {:08X}:{}", form->GetFormID(), lock_id);
+        return true;
     }
 
     // Check lockId amd sharedLocks in Lock
@@ -190,27 +207,35 @@ bool GCIP::Modules::EncounterPlanner::isLocked(RE::TESForm* form, std::string lo
                   lockedFormIt->second->locks.top()->sharedLocks.end(),
                   lock_id) != lockedFormIt->second->locks.top()->sharedLocks.end()) {
         this->spinUnlock();
-        return false;
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::isLockAllowed - Lock allowed by lock_id or sharedLocks {:08X}:{}",
+            form->GetFormID(), lock_id);
+        return true;
     }
 
     this->spinUnlock();
     this->dumpToLog();
-    return true;
+    LOG("GCIP::Modules::EncounterPlanner::isLockAllowed - Locked {:08X}:{}", form->GetFormID(), lock_id);
+    return false;
 }
 
 bool GCIP::Modules::EncounterPlanner::unlock(RE::TESForm* form, std::string lock_id) {
-    LOG("GCIP::Modules::EncounterPlanner::unlock");
+    LOG("GCIP::Modules::EncounterPlanner::unlock {:08X}:{}", form->GetFormID(), lock_id);
     // Check in lockedForms
     this->spinLock();
     auto lockedFormIt = this->forms.find(form->GetFormID());
     if (lockedFormIt == this->forms.end()) {
         this->spinUnlock();
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::unlock - Not locked {:08X}:{}", form->GetFormID(), lock_id);
         return true;
     }
 
     // Check LockedForm is empty
     if (lockedFormIt->second->locks.empty()) {
         this->spinUnlock();
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::unlock - Not have locks {:08X}:{}", form->GetFormID(), lock_id);
         return true;
     }
 
@@ -218,11 +243,14 @@ bool GCIP::Modules::EncounterPlanner::unlock(RE::TESForm* form, std::string lock
     if (lockedFormIt->second->locks.top()->lockId == lock_id) {
         lockedFormIt->second->locks.pop();
         this->spinUnlock();
+        this->dumpToLog();
+        LOG("GCIP::Modules::EncounterPlanner::unlock - Unlocked {:08X}:{}", form->GetFormID(), lock_id);
         return true;
     }
 
     this->spinUnlock();
     this->dumpToLog();
+    LOG("GCIP::Modules::EncounterPlanner::unlock - Locked by another lock {:08X}:{}", form->GetFormID(), lock_id);
     return false;
 }
 

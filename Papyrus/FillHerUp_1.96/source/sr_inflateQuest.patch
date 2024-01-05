@@ -1,0 +1,116 @@
+diff --git a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source_original/sr_inflateQuest.psc b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source/sr_inflateQuest.psc
+index 572a28a..abeecd0 100644
+--- a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source_original/sr_inflateQuest.psc
++++ b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source/sr_inflateQuest.psc
+@@ -1,6 +1,7 @@
+ Scriptname sr_inflateQuest extends Quest
+ 
+ import StorageUtil
++import GCIP
+ 
+ sr_inflateConfig Property config auto
+ sr_infDeflateAbility Property defAlias Auto
+@@ -391,7 +392,7 @@ Event OrgasmSeparate(Form ActorRef, Int Thread)
+ 			int actorGender = sexlab.GetGender(actors[i])
+ 		;	log(anim.name + " - cumSpot for position " + i + ": " + cumSpot)
+ 			If akActor != actors[i]
+-				If ((actorGender == 1 && config.femaleEnabled) || (actorGender == 0 && config.maleEnabled)) && cumSpot != -1 && cumSpot != 2
++				If ((actorGender == 1 && config.femaleEnabled) || (actorGender == 0 && config.maleEnabled)) && cumSpot != -1; && cumSpot != 2
+ 					; only inflate if the actor is female (or male pretending to be female!) and the animation position has cum effect set for something else than oral only
+ 					If actors[i] == player && sr_CumEffectsEnabled.GetValueInt() > 0
+ 						RegisterForModEvent("fhu.playerInflated", "PlayerInflationDone")
+@@ -447,7 +448,7 @@ Event Orgasm(int thread, bool hasPlayer)
+ 			int actorGender = sexlab.GetGender(actors[i])
+ 		;	log(anim.name + " - cumSpot for position " + i + ": " + cumSpot)
+ 			;If ((actorGender == 1 && config.femaleEnabled) || (actorGender == 0 && config.maleEnabled)) && cumSpot != -1 && cumSpot != 2
+-			If ((actorGender == 1 && config.femaleEnabled) || (actorGender == 0 && config.maleEnabled)) && cumSpot != -1
++			If ((actorGender == 1 && config.femaleEnabled) || (actorGender == 0 && config.maleEnabled)) ;&& cumSpot != -1
+ 				; only inflate if the actor is female (or male pretending to be female!) and the animation position has cum effect set for something else than oral only
+ 				If actors[i] == player && sr_CumEffectsEnabled.GetValueInt() > 0
+ 					RegisterForModEvent("fhu.playerInflated", "PlayerInflationDone")
+@@ -1006,7 +1007,7 @@ endif
+ 
+ cumtypei = cumtype
+ 
+-	If !akActor.Is3DLoaded()
++	If !akActor.Is3DLoaded() || !GCIP.tryLock(akActor, "FHU", "FHU Leakage")
+ 	;	log("Skipping animation for " + akActor.GetLeveledActorBase().GetName())
+ 		return
+ 	EndIf
+@@ -1446,8 +1447,11 @@ Function StopLeakage(Actor akActor)
+ 	Else
+ 		MfgConsoleFunc.ResetPhonemeModifier(akActor);Player expression is controlled here(OnKeyUp)
+ 		ActorUtil.RemovePackageOverride(akActor, stayStillPackage)
++		akActor.EvaluatePackage()
+ 	EndIf
+ 
++	GCIP.unlock(akActor, "FHU")
++
+ 	if spermtype == 1
+ 		akActor.unequipItem(sr_analLeakBeast, abSilent=true)
+ 		akActor.unequipItem(sr_vagLeakBeast, abSilent=true)
+@@ -1626,7 +1630,7 @@ int i
+ 		while i > 0
+ 			i -= 1
+ 			Male = sr_InjectorFormlist.getat(i) as actor
+-			if (Male.GetBaseObject() as Actorbase).getsex() == 0
++			if Male && (Male.GetBaseObject() as Actorbase).getsex() == 0
+ 				FertilityEventGo("FertilityModeAddSperm", a as form, Male.Getleveledactorbase().getname(), Male as form)
+ 				If fullness > sr_SendingSpermDataCriterion.getvalue() as int
+ 					FertilityEventGo("FertilityModeImpregnate", a as form, Male.Getleveledactorbase().getname(), None)
+@@ -1639,7 +1643,7 @@ int i
+ 
+ 		while i > 0
+ 			i -= 1
+-			if (injector[i].GetActorBase()).getsex() == 0
++			if injector[i] && (injector[i].GetActorBase()).getsex() == 0
+ 				Male = injector[i]
+ 				FertilityEventGo("FertilityModeAddSperm", a as form, Male.Getleveledactorbase().getname(), Male as form)
+ 				If fullness > sr_SendingSpermDataCriterion.getvalue() as int
+@@ -1660,7 +1664,7 @@ int i
+ 		while i > 0
+ 			i -= 1
+ 			Male = sr_InjectorFormlist.getat(i) as actor
+-			if (Male.GetBaseObject() as Actorbase).getsex() == 0
++			if Male && (Male.GetBaseObject() as Actorbase).getsex() == 0
+ 				Male.SendModEvent("BeeingFemale", "AddSperm", a.GetFormID())
+ 				Utility.wait(1.0)
+ 			endif
+@@ -1670,7 +1674,7 @@ int i
+ 
+ 		while i > 0
+ 			i -= 1
+-			if ((injector[i].GetActorBase()).getsex() == 0) && (Player != injector[i])
++			if (injector[i] && (injector[i].GetActorBase()).getsex() == 0) && (Player != injector[i])
+ 				;debug.notification("yes male")
+ 				Male = injector[i]
+ 				Male.SendModEvent("BeeingFemale", "AddSperm", a.GetFormID())
+@@ -1710,7 +1714,7 @@ State MonitoringInflation
+ 				
+ 					n -= 1
+ 					Actor a = FormListGet(self, INFLATED_ACTORS, n) as Actor
+-					if a && !a.IsDead() && !a.IsInCombat() && a.GetCurrentScene() == none && !a.IsInFaction(slAnimatingFaction)
++					if a && !a.IsDead() && !a.IsInCombat() && a.GetCurrentScene() == none && !isAnimating(a)
+ 						float lastVagTime = GetFloatValue(a, LAST_TIME_VAG) 
+ 						float lastAnalTime = GetFloatValue(a, LAST_TIME_ANAL)
+ 						float lastoralTime = GetFloatValue(a, LAST_TIME_ORAL)
+@@ -2131,7 +2135,9 @@ Function StripCover(Actor akActor, bool isAnal)
+ EndFunction
+ 
+ Function UnstripActor(Actor akActor)
+-	EquipArmor(akActor)
++	If config.strip
++		EquipArmor(akActor)
++	endIf
+ EndFunction
+ 
+ Function UnequipArmor(Actor target)
+@@ -2602,3 +2608,7 @@ EndFunction
+ Function SLIF_unregisterMorph(Actor akActor, String MorphName)
+ ;Null
+ EndFunction
++
++bool Function isAnimating(Actor akActor)
++	return !GCIP.isLockAllowed(akActor, "FHU")
++EndFunction
+\ No newline at end of file
