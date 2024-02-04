@@ -30,6 +30,7 @@ namespace GCIP::Modules {
         std::string getCurrentAction(RE::TESForm* form);
 
     protected:
+        bool isLockAllowed(RE::TESForm* form);
         std::unordered_map<RE::FormID, std::shared_ptr<LockedForm>> forms;
         struct {
             RE::TESFaction* slAnimatingFaction = nullptr;

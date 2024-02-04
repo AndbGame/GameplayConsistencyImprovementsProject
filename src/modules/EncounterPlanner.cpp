@@ -100,23 +100,12 @@ void GCIP::Modules::EncounterPlanner::dumpToLog() {
 }
 
 bool GCIP::Modules::EncounterPlanner::tryLock(RE::TESForm* form, std::string lock_id, std::string action) {
+    if (!isLockAllowed(form)) {
+        return false;
+    }
+
     LOG("GCIP::Modules::EncounterPlanner::tryLock {:08X}:{}", form->GetFormID(), lock_id);
     std::shared_ptr<LockedForm> lockedForm;
-
-    // Base Mods
-    auto actor = form->As<RE::Actor>();
-    if (actor != nullptr) {
-        // SexLab
-        if (Forms.slAnimatingFaction != nullptr && actor->IsInFaction(Forms.slAnimatingFaction)) {
-            LOG("GCIP::Modules::EncounterPlanner::tryLock - Not Locked {:08X}:{}", form->GetFormID(),
-                "slAnimatingFaction");
-        }
-        // Defeat
-        if (Forms.defeatFaction != nullptr && actor->IsInFaction(Forms.defeatFaction)) {
-            LOG("GCIP::Modules::EncounterPlanner::tryLock - Not Locked {:08X}:{}", form->GetFormID(),
-                "defeatFaction");
-        }
-    }
 
     // Check in lockedForms
     this->spinLock();
@@ -210,6 +199,10 @@ bool GCIP::Modules::EncounterPlanner::shareLock(RE::TESForm* form, std::string l
 }
 
 bool GCIP::Modules::EncounterPlanner::isLockAllowed(RE::TESForm* form, std::string lock_id) {
+    if (!isLockAllowed(form)) {
+        return false;
+    }
+
     LOG("GCIP::Modules::EncounterPlanner::isLockAllowed {:08X}:{}", form->GetFormID(), lock_id);
     // Check in lockedForms
     this->spinLock();
@@ -301,4 +294,23 @@ std::string GCIP::Modules::EncounterPlanner::getCurrentAction(RE::TESForm* form)
     this->spinUnlock();
 
     return lockedFormIt->second->locks.top()->action;
+}
+
+bool GCIP::Modules::EncounterPlanner::isLockAllowed(RE::TESForm* form) {
+    // Base Mods
+    auto actor = form->As<RE::Actor>();
+    if (actor != nullptr) {
+        // SexLab
+        if (Forms.slAnimatingFaction != nullptr && actor->IsInFaction(Forms.slAnimatingFaction)) {
+            LOG("GCIP::Modules::EncounterPlanner::isLockAllowed - not allowed {:08X} by {}", form->GetFormID(),
+                "slAnimatingFaction");
+            return false;
+        }
+        // Defeat
+        if (Forms.defeatFaction != nullptr && actor->IsInFaction(Forms.defeatFaction)) {
+            LOG("GCIP::Modules::EncounterPlanner::isLockAllowed - not allowed {:08X} by {}", form->GetFormID(), "defeatFaction");
+            return false;
+        }
+    }
+    return true;
 }
