@@ -67,6 +67,19 @@ void GCIP::Modules::EncounterPlanner::reset() {
     this->spinLock();
     this->forms.clear();
     this->spinUnlock();
+
+    RE::TESDataHandler* handler = RE::TESDataHandler::GetSingleton();
+
+#define LOAD_FORM(NAME, TYPE, ID, PLUGIN)                                                                  \
+    NAME = handler->LookupForm<TYPE>(ID, PLUGIN);                                                          \
+    if (NAME == nullptr) {                                                                                 \
+        SKSE::log::error("initializeForms : Not found <" #TYPE " - " #ID "> '" #NAME "' in '" PLUGIN "'"); \
+    }
+
+    LOAD_FORM(Forms.slAnimatingFaction, RE::TESFaction, 0x00E50F, "SexLab.esm");
+    LOAD_FORM(Forms.defeatFaction, RE::TESFaction, 0x001D92, "SexLabDefeat.esp");
+
+#undef LOAD_FORM
 }
 
 void GCIP::Modules::EncounterPlanner::dumpToLog() {
@@ -89,6 +102,21 @@ void GCIP::Modules::EncounterPlanner::dumpToLog() {
 bool GCIP::Modules::EncounterPlanner::tryLock(RE::TESForm* form, std::string lock_id, std::string action) {
     LOG("GCIP::Modules::EncounterPlanner::tryLock {:08X}:{}", form->GetFormID(), lock_id);
     std::shared_ptr<LockedForm> lockedForm;
+
+    // Base Mods
+    auto actor = form->As<RE::Actor>();
+    if (actor != nullptr) {
+        // SexLab
+        if (Forms.slAnimatingFaction != nullptr && actor->IsInFaction(Forms.slAnimatingFaction)) {
+            LOG("GCIP::Modules::EncounterPlanner::tryLock - Not Locked {:08X}:{}", form->GetFormID(),
+                "slAnimatingFaction");
+        }
+        // Defeat
+        if (Forms.defeatFaction != nullptr && actor->IsInFaction(Forms.defeatFaction)) {
+            LOG("GCIP::Modules::EncounterPlanner::tryLock - Not Locked {:08X}:{}", form->GetFormID(),
+                "defeatFaction");
+        }
+    }
 
     // Check in lockedForms
     this->spinLock();

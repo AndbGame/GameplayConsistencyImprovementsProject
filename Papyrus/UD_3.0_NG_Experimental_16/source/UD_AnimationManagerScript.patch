@@ -1,0 +1,22 @@
+diff --git a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_16/source_original/UD_AnimationManagerScript.psc b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_16/source/UD_AnimationManagerScript.psc
+index abf85a3..d5db60c 100644
+--- a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_16/source_original/UD_AnimationManagerScript.psc
++++ b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/UD_3.0_NG_Experimental_16/source/UD_AnimationManagerScript.psc
+@@ -497,7 +497,7 @@ EndFunction
+ /;
+ Function LockAnimatingActor(Actor akActor, Bool abDisableActor = True)
+ 
+-    If IsAnimating(akActor)
++    If IsAnimating(akActor) || !GCIP.tryLock(akActor, "UD_Animation", "Unforgiving Devices Animation")
+         Return
+     EndIf
+     
+@@ -560,6 +560,8 @@ Function UnlockAnimatingActor(Actor akActor, Bool abEnableActor = True)
+     
+     akActor.SetVehicle(None)
+     
++    GCIP.unlock(akActor, "UD_Animation")
++    
+     ;If StorageUtil.HasFormValue(akActor, "UD_EquippedShield")
+     ;    If UD_Native.IsPlayer(akActor)
+     ;        Armor shield = StorageUtil.GetFormValue(akActor, "UD_EquippedShield") as Armor

@@ -31,5 +31,9 @@ namespace GCIP::Modules {
 
     protected:
         std::unordered_map<RE::FormID, std::shared_ptr<LockedForm>> forms;
+        struct {
+            RE::TESFaction* slAnimatingFaction = nullptr;
+            RE::TESFaction* defeatFaction = nullptr;
+        } Forms;
     };
 }

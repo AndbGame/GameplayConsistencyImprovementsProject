@@ -1447,6 +1447,7 @@ Function StopLeakage(Actor akActor)
 	Else
 		MfgConsoleFunc.ResetPhonemeModifier(akActor);Player expression is controlled here(OnKeyUp)
 		ActorUtil.RemovePackageOverride(akActor, stayStillPackage)
+		Debug.SendAnimationEvent(akActor as ObjectReference,"IdleForceDefaultState")
 		akActor.EvaluatePackage()
 	EndIf
 

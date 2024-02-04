@@ -1,5 +1,5 @@
 diff --git a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source_original/sr_inflateQuest.psc b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source/sr_inflateQuest.psc
-index 572a28a..abeecd0 100644
+index 572a28a..12d7c9d 100644
 --- a/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source_original/sr_inflateQuest.psc
 +++ b/E:/andb_skyrim_3/projects/GameplayConsistencyImprovementsProject/Papyrus/FillHerUp_1.96/source/sr_inflateQuest.psc
 @@ -1,6 +1,7 @@
@@ -37,10 +37,11 @@ index 572a28a..abeecd0 100644
  	;	log("Skipping animation for " + akActor.GetLeveledActorBase().GetName())
  		return
  	EndIf
-@@ -1446,8 +1447,11 @@ Function StopLeakage(Actor akActor)
+@@ -1446,8 +1447,12 @@ Function StopLeakage(Actor akActor)
  	Else
  		MfgConsoleFunc.ResetPhonemeModifier(akActor);Player expression is controlled here(OnKeyUp)
  		ActorUtil.RemovePackageOverride(akActor, stayStillPackage)
++		Debug.SendAnimationEvent(akActor as ObjectReference,"IdleForceDefaultState")
 +		akActor.EvaluatePackage()
  	EndIf
  
@@ -49,7 +50,7 @@ index 572a28a..abeecd0 100644
  	if spermtype == 1
  		akActor.unequipItem(sr_analLeakBeast, abSilent=true)
  		akActor.unequipItem(sr_vagLeakBeast, abSilent=true)
-@@ -1626,7 +1630,7 @@ int i
+@@ -1626,7 +1631,7 @@ int i
  		while i > 0
  			i -= 1
  			Male = sr_InjectorFormlist.getat(i) as actor
@@ -58,7 +59,7 @@ index 572a28a..abeecd0 100644
  				FertilityEventGo("FertilityModeAddSperm", a as form, Male.Getleveledactorbase().getname(), Male as form)
  				If fullness > sr_SendingSpermDataCriterion.getvalue() as int
  					FertilityEventGo("FertilityModeImpregnate", a as form, Male.Getleveledactorbase().getname(), None)
-@@ -1639,7 +1643,7 @@ int i
+@@ -1639,7 +1644,7 @@ int i
  
  		while i > 0
  			i -= 1
@@ -67,7 +68,7 @@ index 572a28a..abeecd0 100644
  				Male = injector[i]
  				FertilityEventGo("FertilityModeAddSperm", a as form, Male.Getleveledactorbase().getname(), Male as form)
  				If fullness > sr_SendingSpermDataCriterion.getvalue() as int
-@@ -1660,7 +1664,7 @@ int i
+@@ -1660,7 +1665,7 @@ int i
  		while i > 0
  			i -= 1
  			Male = sr_InjectorFormlist.getat(i) as actor
@@ -76,7 +77,7 @@ index 572a28a..abeecd0 100644
  				Male.SendModEvent("BeeingFemale", "AddSperm", a.GetFormID())
  				Utility.wait(1.0)
  			endif
-@@ -1670,7 +1674,7 @@ int i
+@@ -1670,7 +1675,7 @@ int i
  
  		while i > 0
  			i -= 1
@@ -85,7 +86,7 @@ index 572a28a..abeecd0 100644
  				;debug.notification("yes male")
  				Male = injector[i]
  				Male.SendModEvent("BeeingFemale", "AddSperm", a.GetFormID())
-@@ -1710,7 +1714,7 @@ State MonitoringInflation
+@@ -1710,7 +1715,7 @@ State MonitoringInflation
  				
  					n -= 1
  					Actor a = FormListGet(self, INFLATED_ACTORS, n) as Actor
@@ -94,7 +95,7 @@ index 572a28a..abeecd0 100644
  						float lastVagTime = GetFloatValue(a, LAST_TIME_VAG) 
  						float lastAnalTime = GetFloatValue(a, LAST_TIME_ANAL)
  						float lastoralTime = GetFloatValue(a, LAST_TIME_ORAL)
-@@ -2131,7 +2135,9 @@ Function StripCover(Actor akActor, bool isAnal)
+@@ -2131,7 +2136,9 @@ Function StripCover(Actor akActor, bool isAnal)
  EndFunction
  
  Function UnstripActor(Actor akActor)
@@ -105,7 +106,7 @@ index 572a28a..abeecd0 100644
  EndFunction
  
  Function UnequipArmor(Actor target)
-@@ -2602,3 +2608,7 @@ EndFunction
+@@ -2602,3 +2609,7 @@ EndFunction
  Function SLIF_unregisterMorph(Actor akActor, String MorphName)
  ;Null
  EndFunction
