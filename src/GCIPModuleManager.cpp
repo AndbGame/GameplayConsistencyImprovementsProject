@@ -1,4 +1,5 @@
 #include <GCIPModuleManager.h>
+#include "../src/GCIPHooks.h"
 
 void GCIP::OnSKSEMessageReceived(SKSE::MessagingInterface::Message* a_msg) {
     if (a_msg != nullptr)
@@ -11,6 +12,8 @@ void GCIP::OnSKSEMessageReceived(SKSE::MessagingInterface::Message* a_msg) {
             case SKSE::MessagingInterface::kPostLoad:
                 LOG("kPostLoad");
                 GCIP::Config::GetSingleton()->Update();
+
+                GCIP::installRMHooks();
             break;
             case SKSE::MessagingInterface::kPreLoadGame:    //set reload flag, so we can prevent in papyrus calls of native function untill view get reset by invoking _reset
                 LOG("kPreLoadGame");

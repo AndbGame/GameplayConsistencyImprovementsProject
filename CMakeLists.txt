@@ -26,11 +26,17 @@ set(source_files ${source_files}
 
 # Setup your SKSE plugin as an SKSE plugin!
 find_package(CommonLibSSE CONFIG REQUIRED)
+find_library(Detours_LIBRARIES NAMES detours.lib)
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${source_files} plugin.cpp)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
 target_precompile_headers(${PROJECT_NAME} PRIVATE PCH.h) # <--- PCH.h is required!
 target_include_directories(${PROJECT_NAME} PRIVATE include)
+
+target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+        ${Detours_LIBRARIES}
+)
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
@@ -55,14 +61,12 @@ if(DEFINED OUTPUT_FOLDER)
     )
 
     # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_custom_command(
-            TARGET "${PROJECT_NAME}"
-            POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
-            VERBATIM
-        )
-    endif()
+    add_custom_command(
+        TARGET "${PROJECT_NAME}"
+        POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
+        VERBATIM
+    )
 
     if(NOT EXISTS "${DLL_FOLDER}/GCIP.ini")
       execute_process(COMMAND ${CMAKE_COMMAND}

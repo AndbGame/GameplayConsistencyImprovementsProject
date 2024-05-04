@@ -1,5 +1,5 @@
 #include <GCIPModuleManager.h>
-#include <GCIPHooks.h>
+#include "src/GCIPHooks.h"
 
 namespace {
     void SetupLog() {
@@ -25,6 +25,8 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
         SKSE::stl::report_and_fail("Unable to register message listener.");
     }
 
-    GCIP::Hooks::installHooks();
+    GCIP::installHooks();
+    GCIP::installEventSink();
+    GCIP::installInputEventSink();
     return true;
 }
